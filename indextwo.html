@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ru">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Анализ звонков</title>
+		<link rel="stylesheet" href="./global.css" />
+		<link rel="stylesheet" href="./detail.css" />
+		<script src="./script.js" defer></script>
+	</head>
+	<body>
+		<div class="page">
+			<div class="header"></div>
+			<div class="container">
+				<div class="sidebar">
+					<ul>
+						<li>
+							<a href="#" class="main-menu">Анализ событий</a>
+							<ul class="submenu">
+								<li><a href="/index.html">Сводная информация</a></li>
+								<li><a href="/indextwo.html">Детальная статистика</a></li>
+							</ul>
+						</li>
+					</ul>
+				</div>
+
+				<div class="content">
+					<div class="filter-block">
+						<div class="filter-section" id="filterSection">
+							<div class="filters">
+								<div class="filter-input date-input">
+									<div class="custom-date-input" tabindex="0" role="textbox" aria-label="Выберите начальную дату">
+										<span class="date-value">2025-02-13</span>
+										<span class="calendar-icon">📅</span>
+									</div>
+									<input type="date" id="startDate" class="hidden-date-input" value="2025-02-13" />
+								</div>
+
+								<div class="filter-input time-input">
+									<div class="custom-time-input" tabindex="0" role="textbox" aria-label="Выберите время начала">
+										<span class="time-value">00:00</span>
+										<span class="clock-icon">⏰</span>
+									</div>
+									<input type="time" id="startTime" class="hidden-time-input" value="00:00" min="00:00" max="23:59" />
+								</div>
+
+								<div class="filter-input date-input">
+									<div class="custom-date-input" tabindex="0" role="textbox" aria-label="Выберите конечную дату">
+										<span class="date-value">2025-02-13</span>
+										<span class="calendar-icon">📅</span>
+									</div>
+									<input type="date" id="endDate" class="hidden-date-input" value="2025-02-13" />
+								</div>
+
+								<div class="filter-input time-input">
+									<div class="custom-time-input" tabindex="0" role="textbox" aria-label="Выберите время окончания">
+										<span class="time-value">23:59</span>
+										<span class="clock-icon">⏰</span>
+									</div>
+									<input type="time" id="endTime" class="hidden-time-input" value="23:59" min="00:00" max="23:59" />
+								</div>
+
+								<div class="filter-input select-input">
+									<div class="custom-select" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+										<span class="selected-option">Все линии</span>
+										<span class="dropdown-icon">▼</span>
+									</div>
+									<div class="options-list" role="listbox">
+										<div class="option" role="option" aria-selected="true">Все линии</div>
+										<div class="option" role="option">Линия 1</div>
+										<div class="option" role="option">Линия 2</div>
+									</div>
+									<select id="teamSelect" class="hidden-select">
+										<option>Все линии</option>
+										<option>Линия 1</option>
+										<option>Линия 2</option>
+									</select>
+								</div>
+
+								<div class="filter-input select-input">
+									<div class="custom-select" tabindex="0" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+										<span class="selected-option">Все событий</span>
+										<span class="dropdown-icon">▼</span>
+									</div>
+									<div class="options-list" role="listbox">
+										<div class="option" role="option" aria-selected="true">Все события</div>
+										<div class="option" role="option">Входящие</div>
+										<div class="option" role="option">Исходящие</div>
+										<div class="option" role="option">Сброшенные</div>
+										<div class="option" role="option">Не взята трубка</div>
+									</div>
+									<select id="callTypeSelect" class="hidden-select">
+										<option>Все события</option>
+										<option>Входящие</option>
+										<option>Исходящие</option>
+										<option>Сброшенные</option>
+										<option>Не взята трубка</option>
+									</select>
+								</div>
+								<div class="filter-input">
+									<div class="name-search-filter">
+										<input class="search-filter" type="text" id="nameSearch" placeholder="Поиск по имени и фамилии" />
+									</div>
+								</div>
+							</div>
+							<button class="apply-button" aria-label="Применить фильтры">Применить</button>
+						</div>
+					</div>
+
+					<div class="cta-analysis">
+						<div class="cta-content" id="Content">
+							<div class="cta-loader" id="loader"></div>
+							<div class="cta-time-axis-container">
+								<div class="cta-time-axis" id="timeAxis"></div>
+							</div>
+						</div>
+					</div>
+
+					<div class="cta-tooltip" id="tooltip"></div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			document.addEventListener('DOMContentLoaded', function () {
+				const Content = document.getElementById('Content')
+				const loader = document.getElementById('loader')
+				const tooltip = document.getElementById('tooltip')
+
+				function showLoader() {
+					loader.style.display = 'block'
+				}
+
+				function hideLoader() {
+					loader.style.display = 'none'
+				}
+
+				function updateContent() {
+					const calls = generateMockCallData()
+					const groupedCalls = groupCallsIntoCategories(calls)
+					const { timelineStart, timelineEnd } = calculateTimeBoundaries(groupedCalls)
+
+					Content.innerHTML = ''
+					Content.appendChild(createTimelineHTML(groupedCalls, timelineStart, timelineEnd))
+
+					const timeAxisContainer = document.createElement('div')
+					timeAxisContainer.className = 'cta-time-axis-container'
+					timeAxisContainer.innerHTML = '<div class="cta-time-axis" id="timeAxis"></div>'
+					Content.appendChild(timeAxisContainer)
+
+					renderTimeAxis(timelineStart, timelineEnd)
+					hideLoader()
+				}
+
+				function generateMockCallData() {
+					const groups = {
+						sl1: [],
+						sl2: [],
+					}
+
+					const schedules = [
+						{ start: 9, end: 18 },						
+					]
+
+					function getRandomSchedule() {
+						return schedules[Math.floor(Math.random() * schedules.length)]
+					}
+
+					function getRandomTimeInSchedule(schedule) {
+						let startHour = schedule.start
+						let endHour = schedule.end
+						if (endHour < startHour) endHour += 4
+						let hour = Math.floor(Math.random() * (endHour - startHour) + startHour) % 4
+						let minute = Math.floor(Math.random() * 60)
+						return new Date().setHours(hour, minute, 0, 0)
+					}
+
+					Object.keys(groups).forEach(group => {
+						const agentCount = 5 + Math.floor(Math.random() * 6)
+						for (let i = 0; i < agentCount; i++) {
+							groups[group].push({
+								id: 300 + Math.floor(Math.random() * 1000),
+								name: `Специалист ${i + 1}`,
+								group,
+								schedule: getRandomSchedule(),
+							})
+						}
+						groups[group].push({
+							id: 2000 + Math.floor(Math.random() * 1000),
+							name: `Только Исходящие`,
+							group,
+							schedule: getRandomSchedule(),
+							onlyOutgoing: true,
+						})
+					})
+
+					const calls = []
+
+					function isTimeAvailable(agentId, startTime, duration, type) {
+						const fiveMinutes = 300000
+						return !calls.some(
+							call =>
+								call.agentId === agentId &&
+								((startTime >= call.startTime && startTime < call.endTime) ||
+									(startTime + duration >= call.startTime && startTime + duration < call.endTime) ||
+									(startTime < call.endTime + fiveMinutes && startTime > call.endTime) ||
+									(startTime + duration + fiveMinutes > call.startTime && startTime + duration < call.startTime) ||
+									(type === 'missed' && startTime >= call.startTime && startTime <= call.endTime + fiveMinutes) ||
+									(call.type === 'missed' && startTime <= call.startTime && startTime + duration >= call.startTime - fiveMinutes) ||
+									(type === 'dropped' && startTime >= call.startTime && startTime <= call.endTime + fiveMinutes) ||
+									(call.type === 'dropped' && startTime <= call.startTime && startTime + duration >= call.startTime - fiveMinutes))
+						)
+					}
+
+					Object.values(groups)
+						.flat()
+						.forEach(agent => {
+							let totalCalls = 50 + Math.floor(Math.random() * 26)
+							let outgoingCount = agent.onlyOutgoing ? Math.floor(totalCalls * 0.95) : Math.floor(totalCalls * (0.03 + Math.random() * 0.02))
+							let incomingCount = totalCalls - outgoingCount
+							let missedCount = agent.onlyOutgoing ? 0 : 3 + Math.floor(Math.random() * 3)
+							let droppedCount = agent.onlyOutgoing ? 0 : 1 + Math.floor(Math.random() * 2)
+
+							while (incomingCount > 0 || outgoingCount > 0 || missedCount > 0 || droppedCount > 0) {
+								let startTime = getRandomTimeInSchedule(agent.schedule)
+								let duration = agent.onlyOutgoing ? Math.random() * 340000 + 180000 : Math.random() * 1420000 + 180000
+								let type = ''
+
+								if (incomingCount > 0 && Math.random() < 0.5 && !agent.onlyOutgoin) {
+									type = 'incoming'
+									incomingCount--
+								} else if (outgoingCount > 0) {
+									type = 'outgoing'
+									outgoingCount--
+								} else if (missedCount > 0 && !agent.onlyOutgoin) {
+									type = 'missed'
+									duration = 0
+									missedCount--
+								} else if (droppedCount > 0 && !agent.onlyOutgoin) {
+									type = 'dropped'
+									duration = 0
+									droppedCount--
+								}
+
+								if (isTimeAvailable(agent.id, startTime, duration, type)) {
+									calls.push({
+										agentId: agent.id,
+										agentName: agent.name,
+										startTime: new Date(startTime),
+										endTime: new Date(startTime + duration),
+										duration,
+										group: agent.group,
+										type,
+									})
+								}
+							}
+						})
+
+					return calls
+				}
+
+				function groupCallsIntoCategories(calls) {
+					const groups = { sl1: {}, sl2: {} }
+					calls.forEach(call => {
+						const group = call.group || 'unknown' 
+						if (!groups[group][call.agentId]) {
+							groups[group][call.agentId] = {
+								agentName: call.agentName,
+								calls: [],
+							}
+						}
+						groups[group][call.agentId].calls.push(call)
+					})
+					return groups
+				}
+
+				function calculateTimeBoundaries(groupedCalls) {
+					let timelineStart = new Date()
+					let timelineEnd = new Date(0)
+					for (const group in groupedCalls) {
+						for (const agentId in groupedCalls[group]) {
+							const calls = groupedCalls[group][agentId].calls
+							calls.forEach(call => {
+								if (call.startTime < timelineStart) timelineStart = call.startTime
+								if (call.endTime > timelineEnd) timelineEnd = call.endTime
+							})
+						}
+					}
+					return { timelineStart, timelineEnd }
+				}
+
+				function createTimelineHTML(groupedCalls, start, end) {
+					const content = document.createElement('div')
+					const groupTemplates = {
+						sl1: { title: 'Линия 1' },
+						sl2: { title: 'Линия 2' },
+					}
+
+					for (const group in groupedCalls) {
+						const groupBlock = document.createElement('div')
+						groupBlock.className = 'cta-group-block'
+
+						const groupTitle = document.createElement('h4')
+						groupTitle.className = 'cta-group-title'
+						groupTitle.textContent = groupTemplates[group] ? groupTemplates[group].title : 'Неизвестная группа'
+						groupBlock.appendChild(groupTitle)
+
+						const sortedAgents = Object.values(groupedCalls[group]).sort((a, b) => a.agentName.localeCompare(b.agentName))
+
+						sortedAgents.forEach(agent => {
+							const agentRow = document.createElement('div')
+							agentRow.className = 'cta-specialist-row'
+
+							const agentName = document.createElement('div')
+							agentName.className = 'cta-specialist-name'
+							agentName.innerHTML = `
+                            <span class="cta-agent-color-badge" style="background:${getAgentColor(agent.agentId)}"></span>
+                            ${agent.agentName} (${agent.calls.length} ${getCallWordEnding(agent.calls.length)}, ${formatDuration(
+								agent.calls.reduce((sum, call) => sum + call.duration, 0)
+							)})
+                        `
+							agentRow.appendChild(agentName)
+
+							const timeline = document.createElement('div')
+							timeline.className = 'cta-timeline'
+							agent.calls.forEach(call => {
+								const callBlock = createCallBlock(call, start, end)
+								timeline.appendChild(callBlock)
+							})
+							agentRow.appendChild(timeline)
+							groupBlock.appendChild(agentRow)
+						})
+
+						content.appendChild(groupBlock)
+					}
+					return content
+				}
+
+				function createCallBlock(call, start, end) {
+					const callBlock = document.createElement('div')
+					callBlock.className = 'cta-call-block'
+					callBlock.style.left = `${calculatePosition(call.startTime, start, end)}%`
+
+					if (call.type === 'dropped') {
+						callBlock.classList.add('dropped-call')
+					} else if (call.type === 'missed') {
+						callBlock.classList.add('missed-call')
+					} else {
+						callBlock.style.width = `${calculateWidth(call.duration, start, end)}%`
+					}
+
+					callBlock.style.background = getCallColor(call.type)
+					callBlock.dataset.start = call.startTime.toISOString()
+					callBlock.dataset.end = call.endTime.toISOString()
+					callBlock.dataset.duration = call.duration
+
+					callBlock.addEventListener('mouseenter', function () {
+						tooltip.innerHTML = `
+                        Начало: ${formatTime(call.startTime)}<br>
+                        Конец: ${formatTime(call.endTime)}<br>
+                        Длительность: ${formatDuration(call.duration)}
+                    `
+						tooltip.style.display = 'block'
+					})
+
+					callBlock.addEventListener('mousemove', function (e) {
+						const rect = callBlock.getBoundingClientRect()
+						const contentRect = Content.getBoundingClientRect()
+						let tooltipX = e.clientX - contentRect.left + 10
+						let tooltipY = e.clientY - contentRect.top + 10
+
+						if (tooltipX + tooltip.offsetWidth > contentRect.width) {
+							tooltipX = contentRect.width - tooltip.offsetWidth
+						}
+						if (tooltipY + tooltip.offsetHeight > contentRect.height) {
+							tooltipY = contentRect.height - tooltip.offsetHeight
+						}
+
+						tooltip.style.left = `${tooltipX}px`
+						tooltip.style.top = `${tooltipY}px`
+					})
+
+					callBlock.addEventListener('mouseleave', function () {
+						tooltip.style.display = 'none'
+					})
+
+					return callBlock
+				}
+
+				function calculatePosition(startTime, timelineStart, timelineEnd) {
+					const total = timelineEnd - timelineStart
+					const position = startTime - timelineStart
+					return (position / total) * 100
+				}
+
+				function calculateWidth(duration, timelineStart, timelineEnd) {
+					const total = timelineEnd - timelineStart
+					return (duration / total) * 100
+				}
+
+				function renderTimeAxis(start, end) {
+					const axisContainer = document.getElementById('timeAxis')
+					if (!axisContainer) {
+						console.error('Ошибка: элемент #timeAxis не найден в DOM')
+						return
+					}
+					axisContainer.innerHTML = ''
+
+					const total = end - start
+					const steps = calculateOptimalSteps(total)
+
+					for (let i = 0; i <= steps; i++) {
+						const time = new Date(start.getTime() + (total * i) / steps)
+						const label = document.createElement('div')
+						label.className = 'cta-time-label'
+						label.style.left = `${(i / steps) * 100}%`
+						label.textContent = formatTime(time)
+						axisContainer.appendChild(label)
+					}
+				}
+
+				function formatTime(date) {
+					return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+				}
+
+				function formatDuration(milliseconds) {
+					const totalSeconds = Math.floor(milliseconds / 1000) 
+					const mins = Math.floor(totalSeconds / 60)
+					const secs = totalSeconds % 60
+					return `${mins} мин ${secs.toString().padStart(2, '0')} сек`
+				}
+
+				function getCallWordEnding(count) {
+					const cases = [2, 0, 1, 1, 1, 2]
+					const words = ['звонок', 'звонка', 'звонков']
+					return words[count % 100 > 4 && count % 100 < 20 ? 2 : cases[Math.min(count % 10, 5)]]
+				}
+
+				function calculateOptimalSteps(totalDuration) {
+					const hours = totalDuration / 3600000
+					if (hours <= 2) return 4
+					if (hours <= 6) return 6
+					return 8
+				}
+
+				function getAgentColor(agentId) {
+					const colors = ['#4567b7', '#d81b60', '#2e7d32', '#5e35b1', '#e53935', '#00897b', '#3f51b5', '#ad1457', '#388e3c', '#7e57c2', '#ba68c8', '#ff7043']
+					return colors[agentId % colors.length]
+				}
+
+				function getCallColor(type) {
+					const colors = {
+						incoming: '#4A90E2',
+						outgoing: '#7854F7',
+						dropped: '#FF5A5F',
+						missed: '#94A3B8',
+					}
+					return colors[type]
+				}
+
+				
+				showLoader()
+				updateContent()
+			})
+		</script>
+	</body>
+</html>

@@ -1,0 +1,146 @@
+.cta-analysis {
+	height: 83vh;
+	background: white;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.cta-header {
+	padding: 15px;
+	background: #f5f5f5;
+	border-bottom: 1px solid #ddd;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.cta-content {
+	flex: 1;
+	overflow: auto;
+	padding: 20px;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	border: 1px solid #ddd;
+	border-radius: 5px;
+}
+
+.cta-group-block {
+	min-width: fit-content;	
+	padding: 20px;
+	border-radius: 20px;
+	margin-bottom: 20px;
+}
+
+.cta-group-title {
+	font-size: 16px;
+	color: #333;
+	margin: 0 0 15px 0;
+	padding-bottom: 10px;
+	border-bottom: 1px solid #ddd;
+}
+
+.cta-specialist-row {
+	padding-bottom: 20px;
+}
+
+.cta-timeline {
+	height: 20px;
+	position: relative;
+	background: #f0f0f0;
+	margin-top: 10px;
+}
+
+.cta-call-block {
+	position: absolute;
+	height: 10px;
+	background: #2196f3;
+	border-radius: 4px;
+	padding: 5px;
+	color: white;
+	border: 0.5px solid #fff;
+	cursor: pointer;
+	transition: transform 0.2s;
+}
+
+.cta-call-block:hover {
+	transform: scaleY(1.1);
+	z-index: 2;
+}
+
+.cta-specialist-name {
+	font-size: 14px;
+	font-weight: bold;
+	color: #333;
+}
+
+.cta-time-axis-container {
+	position: sticky;
+	bottom: -25px;
+	width: 100%;
+	background: white;
+	z-index: 999;
+	padding: 10px 0;
+	border-top: 1px solid #eee;
+}
+
+.cta-time-axis {
+	height: 20px;
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 5px 0;
+	margin: 0 20px;
+}
+
+.cta-time-label {
+	position: absolute;
+	transform: translateX(-50%);
+	font-size: 12px;
+	color: #666;
+	white-space: nowrap;
+}
+
+.cta-agent-color-badge {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	display: inline-block;
+}
+
+.cta-tooltip {
+	position: fixed;
+	background: rgba(0, 0, 0, 0.9);
+	color: white;
+	left: -100px;
+	padding: 8px 12px;
+	border-radius: 6px;
+	font-size: 13px;
+	z-index: 9999;
+	pointer-events: none;
+	white-space: nowrap;
+	backdrop-filter: blur(2px);
+}
+
+
+.dropped-call {
+	width: 1px !important;
+	height: 1px !important;
+	top: 4px;
+	z-index: 99;
+	border-radius: 50%;
+	border: 0.5px solid #fff;
+	background-color: #ff0008 !important;
+}
+
+.missed-call {
+	width: 1px !important;
+	height: 1px !important;
+	top: 4px;
+	z-index: 99;
+	border-radius: 50%;
+	border: 0.5px solid #fff;
+	background-color: #ff7043 !important;
+}
